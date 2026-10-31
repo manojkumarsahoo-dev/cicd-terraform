@@ -1,4 +1,3 @@
-```yaml
 name: Terraform Pull Request
 
 on:
@@ -43,4 +42,3 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan
-```
