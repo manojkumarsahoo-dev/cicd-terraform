@@ -1,67 +1,21 @@
-# ==========================================
-# OLD WORKFLOW (Single Job - Direct Apply)
-# ==========================================
+```yaml
+name: Terraform Pull Request
 
-# on:
-#   push:
-#     branches: [ main ]
-#   workflow_dispatch:   # Manual trigger only
-#
-# jobs:
-#   terraform:
-#     runs-on: ubuntu-latest
-#     env:
-#       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#       AWS_DEFAULT_REGION: us-east-1
-#
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v4
-#
-#       - name: Setup Terraform
-#         uses: hashicorp/setup-terraform@v3
-#         with:
-#           terraform_version: 1.9.8
-#
-#       - name: Terraform Init
-#         run: terraform init
-#
-#       - name: Terraform Plan
-#         run: terraform plan -out=tfplan
-#
-#       - name: Terraform Apply
-#         run: terraform apply -auto-approve tfplan
-
-
-# ==========================================
-# UPDATED WORKFLOW
-# PR APPROVAL → MERGE → PLAN → MANUAL APPROVAL → APPLY
-# ==========================================
-
-name: Terraform Deploy
-
-# Workflow triggers
 on:
-  # Start workflow after approved PR is merged into main
-  push:
-    branches: [ main ]
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
-  # Allow manual workflow execution
-  workflow_dispatch:
-
-# Repository permissions
 permissions:
   contents: read
 
 jobs:
-
-  # ==========================================
-  # JOB 1: TERRAFORM PLAN
-  # ==========================================
-
-  plan:
-    name: Terraform Plan
+  terraform:
+    name: Terraform Validate and Plan
     runs-on: ubuntu-latest
 
     env:
@@ -70,81 +24,23 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
 
     steps:
-
-      # Download repository code
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
 
-      # Initialize Terraform
       - name: Terraform Init
         run: terraform init
 
-      # Validate Terraform configuration
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
       - name: Terraform Validate
         run: terraform validate
 
-      # Generate execution plan
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
-      # Upload Terraform plan artifact
-      - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: tfplan
-          retention-days: 1
-
-
-  # ==========================================
-  # JOB 2: TERRAFORM APPLY
-  # ==========================================
-
-  apply:
-    name: Terraform Apply
-    runs-on: ubuntu-latest
-
-    # Wait until Plan job completes successfully
-    needs: plan
-
-    # Manual deployment approval through GitHub Environment
-    environment:
-      name: production
-
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: us-east-1
-
-    steps:
-
-      # Download repository code
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Install Terraform
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.8
-
-      # Initialize Terraform
-      - name: Terraform Init
-        run: terraform init
-
-      # Download saved Terraform plan
-      - name: Download Plan Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
-          path: .
-
-      # Apply approved Terraform plan
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform plan
+```
