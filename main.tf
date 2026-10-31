@@ -13,5 +13,3 @@ resource "aws_subnet" "dev" {
     Name = var.subnet_tag
   }
 }
-
-#lets do some pull requests
