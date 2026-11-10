@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-@@ -31,149 +31,37 @@ jobs:
+ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
